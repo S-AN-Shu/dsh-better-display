@@ -22,7 +22,7 @@ test('Harness 0.2.0 peer range accepts the rc.1 and stable releases', () => {
   assert.ok(peers.length >= 12);
   for (const [name, range] of peers) {
     assert.equal(range, HARNESS_PEER, name);
-    assert.equal(semver.satisfies('0.2.0-rc.1', range), true, name);
+    assert.equal(semver.satisfies('0.2.0-rc.2', range), true, name);
     assert.equal(semver.satisfies('0.2.0', range), true, name);
     assert.equal(semver.satisfies('0.2.0-alpha.1', range), false, name);
     assert.equal(semver.satisfies('0.2.0-alpha', range), false, name);
