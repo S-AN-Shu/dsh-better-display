@@ -17,5 +17,5 @@ npm 的 `dsh-progress-narrator@0.3.0` 是独立播报插件。此仓库是 Bette
 
 ## 发布包 SHA256
 
-- `dsh-better-display-0.3.4.tgz`: `59f456a277098dc0d14cbd742758f189433d49db4f86117ffa692549d3120b8e`
+- `dsh-better-display-0.3.4.tgz`: `fe0ce3e0019d1bec97b70c090af354ef1f27fbc6ab274dc6831575178c4bd16d`
 - `dsh-better-display-0.3.4-yishu.reader.1.tgz`: `3266c531880ddf69048b04463c1476c0a2439126e9ceae417f01ec1d609c2b28`
