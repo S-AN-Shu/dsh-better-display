@@ -53,3 +53,13 @@ npm run typecheck
 ## 许可
 
 展示与 Markdown 部分来自 DeepSeek Harness（MIT）。动效参考 [Transitions.dev](https://transitions.dev/)。本仓库代码 [MIT](LICENSE)。
+
+
+## Local Windows compatibility patch (0.3.4-yishu.windows.1)
+
+Reader Markdown images accept drive-qualified absolute paths with either separator, using the existing authenticated Host file endpoint. Relative paths, UNC/network paths and unsupported page protocols retain their existing behavior. Paths with spaces need Markdown angle brackets, for example `![figure](<C:/Pictures/中文 图.png>)`. Forward slashes avoid Markdown backslash escapes. This patch affects display only, not model image input.
+
+
+## Local Reader narration compatibility
+
+0.3.4-yishu.reader.1 includes the Windows absolute Markdown image fix and integrates dsh-progress-narrator's canonical progress protocol into Reader. Recognized assistant progress lines display once in quiet secondary text outside process folds; the pin/control prefix is presentation-only and omitted. Source session events remain unchanged. User text, code examples, lists and quotes retain their existing behavior. Reader remains the sole process-fold owner. The canonical BSD-3-Clause parser is vendored under `src/client/native/progress-protocol.ts`; independent layout adaptation is in `src/client/narration.tsx`. The original upstream source map is retained as a package file but not attached to the patched Client.

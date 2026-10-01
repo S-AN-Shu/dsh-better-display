@@ -1,6 +1,7 @@
 /** Web or Desktop file route. Authorization stays Host-side. */
 export function localPathMediaUrl(protocol: string, origin: string, value: string): string | undefined {
-  if (!value.startsWith('/') || value.startsWith('//')) return undefined;
+  const absolutePath = (value.startsWith('/') && !value.startsWith('//')) || /^[a-z]:[\\/]/i.test(value);
+  if (!absolutePath) return undefined;
   if (protocol === 'http:' || protocol === 'https:') {
     return `${origin}/api/file?path=${encodeURIComponent(value)}`;
   }

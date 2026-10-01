@@ -21,3 +21,15 @@ test('Desktop file routes use the application file API', () => {
   assert.equal(url.startsWith('dsh-app://app/api/file?'), true);
   assert.equal(new URL(url).searchParams.get('path'), '/tmp/a.png');
 });
+
+// Windows drive paths are local file references, not URL schemes.
+test('Windows drive image paths retain authored bytes on Web and Desktop', () => {
+  for (const path of [String.raw`C:\Users\19161\图片.png`, 'C:/Users/19161/图片.png', String.raw`D:\中文 空格\图 #1%20?&.png`]) {
+    for (const [protocol, origin] of [['http:', 'http://local'], ['https:', 'https://local'], ['dsh-app:', 'dsh-app://app']]) {
+      const url = localPathMediaUrl(protocol!, origin!, path);
+      assert.ok(url);
+      assert.equal(new URL(url).searchParams.get('path'), path);
+    }
+  }
+  assert.equal(localPathMediaUrl('http:', 'http://local', 'C:relative.png'), undefined);
+});
