@@ -66,8 +66,9 @@ test('autoFold false keeps every step open; autoFold true is current-main fold-o
   const standard = presentLiveTurn(steps, open, true);
   assert.equal(standard[0]?.kind, 'fold');
   if (standard[0]?.kind !== 'fold') throw new Error('expected standard fold');
-  assert.deepEqual(standard[0].steps.map(step => step.key), ['r1', 'b1', 't1']);
-  assert.deepEqual(standard.filter(item => item.kind === 'open').map(item => item.key), ['r2']);
+  assert.deepEqual(standard[0].steps.map(step => step.key), ['r1']);
+  assert.deepEqual(standard.filter(item => item.kind === 'fold').flatMap(item => item.steps.map(step => step.key)), ['r1', 't1']);
+  assert.deepEqual(standard.filter(item => item.kind === 'open').map(item => item.key), ['b1', 'r2']);
 });
 
 test('root reader store persists glass off and standard fold on dsh.reader.v1', () => {

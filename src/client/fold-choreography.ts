@@ -53,3 +53,14 @@ export function containsNewUser(before: readonly LiveTurnItem[], after: readonly
   const users = new Set(before.filter(item => item.kind === 'user').map(item => item.key));
   return after.some(item => item.kind === 'user' && !users.has(item.key));
 }
+
+/** Newly arriving or growing public text must never wait for process choreography. */
+export function containsPublicUpdate(before: readonly LiveTurnItem[], after: readonly LiveTurnItem[]): boolean {
+  const prior = new Map(flowRows(before).filter(row => row.kind === 'step').map(row => [row.key, row]));
+  return flowRows(after).some(row => {
+    if (row.kind !== 'step' || (row.step.kind !== 'body' && row.step.kind !== 'progress')) return false;
+    const old = prior.get(row.key);
+    return !old || old.kind !== 'step' || !('blocks' in old.step)
+      || JSON.stringify(old.step.blocks) !== JSON.stringify(row.step.blocks);
+  });
+}

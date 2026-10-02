@@ -53,3 +53,12 @@ npm run typecheck
 ## License
 
 Display and Markdown pieces come from DeepSeek Harness (MIT). Motion is based on [Transitions.dev](https://transitions.dev/). This repo is [MIT](LICENSE).
+## Reader public-text compatibility (0.3.4-yishu.reader.2)
+
+This maintained fork is on `reader-narration-0.3.4`, separate from upstream. Desktop: **Settings → Plugins → Add plugin**, enter `github:S-AN-Shu/dsh-better-display#reader-narration-0.3.4`, or install the locally built `.tgz`. Web CLI: `dsh plugin --profile web add github:S-AN-Shu/dsh-better-display#reader-narration-0.3.4`. Web installation does not update the Desktop profile. Do not install two Reader bundles together. The upstream installation instructions above install upstream 0.3.4, not this adaptation.
+
+Plain intermediate prose and explicit narration now occupy their original source seats between reasoning, tools and user messages. Public text stays expanded; only reasoning/process details fold. Intermediate paragraphs use weight600, narration uses the existing secondary color/weight400/14px; code, tables, media and final answers retain their styling. Windows absolute Markdown image paths remain supported.
+
+The canonical `publicTextSegments` parser is copied verbatim from dsh-progress-narrator0.4.0. `public-text-source.json` records source, versions and SHA256; consistency tests verify it. Top aggregation and late body filtering are removed. Empty text/reasoning/known non-rendering records are excluded before FlowCell creation; closing folds hides the outer seat. Public updates bypass process choreography and keep source-based keys through text growth/classification.
+
+See [public-text adaptation and acceptance](docs/public-text-fusion.md). This is display-only integration; it does not generate reasoning summaries, add model requests, or change session events. Upstream unadapted Reader is outside this support promise. No new npm or GitHub Release publication is implied by this branch update.

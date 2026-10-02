@@ -9,11 +9,11 @@ const open = { status: 'open' } as const;
 test('first fold retains every visible step key and admits no incoming reasoning', () => {
   const before = presentLiveTurn([reasoning(1), body], open);
   const after = presentLiveTurn([reasoning(1), body, reasoning(2)], open);
-  assert.deepEqual(retiringKeys(before, after, {}), ['r1', 'b1']);
+  assert.deepEqual(retiringKeys(before, after, {}), ['r1']);
   const rows = collapseRows(before, after);
   assert.deepEqual(rows.filter(x => x.kind === 'step').map(x => x.key), ['r1', 'b1']);
   assert.equal(rows[0].kind, 'summary');
-  assert.equal(rows[0].kind === 'summary' && rows[0].item.summary, '思考×0 · 输出×0');
+  assert.equal(rows[0].kind === 'summary' && rows[0].item.summary, '思考×0');
   assert.equal(new Set(flowRows(after).map(row => row.key)).size, flowRows(after).length);
 });
 test('repeat fold retires only displayed open rows, retaining the same summary identity', () => {
@@ -21,7 +21,7 @@ test('repeat fold retires only displayed open rows, retaining the same summary i
   const after = presentLiveTurn([reasoning(1), body, reasoning(2), reasoning(3)], open);
   assert.deepEqual(retiringKeys(before, after, {}), ['r2']);
   assert.equal(collapseRows(before, after)[0].key, flowRows(before)[0].key);
-  assert.deepEqual(retiringKeys(before, after, { 'live-fold:r1': true }), []);
+  assert.deepEqual(retiringKeys(before, after, { 'live-fold:r1': true, 'live-fold:r2': true }), []);
 });
 test('user admission bypasses buffered choreography and preserves source ordering', () => {
   const before = presentLiveTurn([reasoning(1)], open);

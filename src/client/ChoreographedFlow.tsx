@@ -3,7 +3,7 @@ import type { ReactNode, RefObject } from 'react';
 import type { ChatSnapshot } from '@deepseek-ai/dsh-client-ui-chat/client';
 import type { ReaderProps } from './types.js';
 import type { LiveStep, LiveTurnItem } from './live-turn.js';
-import { collapseRows, containsNewUser, flowRows, FOLD_TIMING, retiringKeys } from './fold-choreography.js';
+import { collapseRows, containsNewUser, containsPublicUpdate, flowRows, FOLD_TIMING, retiringKeys } from './fold-choreography.js';
 import type { FoldPhase } from './fold-choreography.js';
 import { Disclosure } from './motion.js';
 import { FoldSummaryText } from './LiveFold.js';
@@ -105,7 +105,7 @@ export function ChoreographedFlow({ frame, motion, enabled, urgent, open, onOpen
   const [state, setState] = useState<Transaction>(() => idle(frame));
   const bypass = !motion || !enabled || urgent || !visible || !processOpen || (state.phase !== 'idle' && Object.values(open).some(Boolean));
   // Render-time adjustment prevents even one paint of the new authoritative layout.
-  if ((bypass || containsNewUser(state.shown.items, frame.items)) && (state.phase !== 'idle' || state.shown !== frame)) {
+  if ((bypass || containsNewUser(state.shown.items, frame.items) || containsPublicUpdate(state.shown.items, frame.items)) && (state.phase !== 'idle' || state.shown !== frame)) {
     setState(idle(frame));
   } else if (state.phase === 'idle' && state.shown !== frame) {
     const retiring = retiringKeys(state.shown.items, frame.items, open);
@@ -220,7 +220,8 @@ export function ChoreographedFlow({ frame, motion, enabled, urgent, open, onOpen
           if (row.kind === 'summary') return <FlowCell key={row.key} rowKey={row.key} hidden={false} instant motion={motion} summary>
             <Summary item={row.item} open={processOpen && !!open[row.key]} onChange={value => onOpenChange(row.key, value)} motion={motion && state.phase !== 'collapse'} />
           </FlowCell>;
-          const hidden = !!row.foldKey && (!processOpen || !open[row.foldKey]) || (blocked && state.phase !== 'collapse' && !state.beforeKeys.has(row.key));
+          const process = row.step.kind === 'reasoning' || row.step.kind === 'tool' || (row.step.kind === 'other' && row.step.process !== false);
+          const hidden = (process && !processOpen) || !!row.foldKey && (!processOpen || !open[row.foldKey]) || (blocked && state.phase !== 'collapse' && !state.beforeKeys.has(row.key));
           // Keep retiring child props unchanged until it has actually shrunk.
           return <FlowCell key={row.key} rowKey={row.key} hidden={hidden} instant={state.phase !== 'idle'} motion={motion}>
             {renderStep(row.step, !!row.foldKey)}

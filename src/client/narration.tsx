@@ -2,7 +2,8 @@ import { createElement } from 'react';
 import type { AssistantChatData, ChatConversationViewNode } from '@deepseek-ai/dsh-client-ui-chat/client';
 import { progressSegments } from './native/progress-protocol.js';
 
-/** Reader owns folding; protocol narration is visible outside its process tree. */
+/** Legacy collector retained for source compatibility. Reader no longer mounts
+ * this top aggregation; public-text seats are projected in live-turn.ts. */
 export function readerNarrations(keys: readonly string[], nodes: ReadonlyMap<string, ChatConversationViewNode>) {
   const items: {key: string; text: string}[] = [];
   for (const key of keys) {

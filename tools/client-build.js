@@ -140,8 +140,10 @@ export function externalClientBundle(id, entries, { clientEntry } = {}) {
     clean: false,
     dts: false,
     deps: {
-      neverBundle: (specifier) => !/^[./]/.test(specifier),
-      alwaysBundle: (specifier) => /^[./]/.test(specifier),
+      // tsdown also calls these predicates with resolved Windows drive paths.
+      // A local source must stay bundled instead of becoming a .ts runtime import.
+      neverBundle: (specifier) => !/^[./]/.test(specifier) && !isAbsolute(specifier),
+      alwaysBundle: (specifier) => /^[./]/.test(specifier) || isAbsolute(specifier),
     },
     outputOptions: { entryFileNames: '[name].js' },
   })

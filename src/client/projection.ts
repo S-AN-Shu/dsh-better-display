@@ -1,5 +1,6 @@
 import type { AssistantBlock, ToolCallBlock, TurnLocation } from '@deepseek-ai/dsh-client-ui-conversation/client';
 import type { AssistantChatData, ChatConversationViewNode } from '@deepseek-ai/dsh-client-ui-chat/client';
+import { publicTextSegments } from './native/progress-protocol.js';
 import { activityPhase } from './tool-activity.js';
 
 export interface ReaderGroup { key: string; turn: number | null; keys: readonly string[] }
@@ -54,8 +55,7 @@ export function hasProcessContent(node: ChatConversationViewNode | undefined, bo
   if (!node || node.visibility === 'hidden') return false;
   if (node.kind === 'assistant-step') {
     const data = node.data as AssistantChatData;
-    return data.blocks.some(block => block.kind === 'reasoning' && block.text.trim() !== '')
-      || (isEarlierNarration(data, boundary) && hasVisibleBody(data.blocks));
+    return data.blocks.some(block => block.kind === 'reasoning' && block.text.trim() !== '');
   }
   return node.kind === 'context' || node.kind === 'model-retry' || node.kind === 'system-prompt' || node.kind === 'turn-process'
     || node.kind === 'command' || node.kind === 'manual-compaction' || node.kind === 'compaction';
@@ -66,19 +66,31 @@ export function hasVisibleBody(blocks: readonly AssistantBlock[]): boolean {
 }
 
 /** Keep native block order. In particular, never lift a later Think above text. */
-export function assistantSegments(blocks: readonly AssistantBlock[]): { kind: 'reasoning' | 'body'; start: number; blocks: AssistantBlock[] }[] {
-  const segments: ReturnType<typeof assistantSegments> = [];
-  let previous: ReturnType<typeof assistantSegments>[number] | undefined;
-  blocks.forEach((block, index) => {
-    if (block.kind === 'tool-call') { previous = undefined; return; }
-    const kind = block.kind === 'reasoning' ? 'reasoning' : 'body';
-    if (previous?.kind === kind) previous.blocks.push(block);
-    else {
-      previous = { kind, start: index, blocks: [block] };
-      segments.push(previous);
-    }
-  });
-  return segments;
+export interface AssistantSegment {
+  kind: 'reasoning' | 'body' | 'progress'; start: number; offset: number;
+  blocks: AssistantBlock[]; progressText?: string;
+}
+export function assistantSegments(blocks: readonly AssistantBlock[]): AssistantSegment[] {
+  return (publicTextSegments(blocks) as Array<Omit<AssistantSegment, 'kind'> & {kind: AssistantSegment['kind'] | 'other';renderable:boolean}>).filter(part => part.renderable
+    && !part.blocks.some(block => block.kind === 'tool-call'))
+    .map(part => ({...part,kind:part.kind === 'other' ? 'body' : part.kind}));
+}
+
+/** Exclude only known empty records; unknown blocks and real status stay. */
+export function hasRenderableRecord(node: ChatConversationViewNode): boolean {
+  const data = node.data as {compaction?:unknown;command?:{outcome?:{kind:string}};text?:string;attempts?:readonly unknown[];current?:{retryState:string}};
+  if (node.kind === 'turn-tail' || node.kind === 'turn-process') return false;
+  if (node.kind === 'compaction') return !!node.data;
+  if (node.kind === 'manual-compaction') return !!data.compaction || data.command?.outcome?.kind === 'error';
+  if (node.kind === 'system-prompt') return !!data.text?.trim();
+  if (node.kind === 'model-retry') return !!data.attempts?.length || data.current?.retryState === 'scheduled';
+  return true;
+}
+
+/** Real terminal notices and unknown records are never process-only payloads. */
+export function isProcessRecord(node: ChatConversationViewNode): boolean {
+  if (node.kind === 'command' && (node.data as {outcome?:{kind:string}}).outcome?.kind === 'error') return false;
+  return ['context','system-prompt','model-retry','manual-compaction','compaction','command'].includes(node.kind);
 }
 
 export function toolFailed(block: ToolCallBlock): boolean {

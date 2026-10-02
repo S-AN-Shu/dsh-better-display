@@ -21,11 +21,18 @@ export declare function processChoiceKey(groupKey: string, boundary: TurnBoundar
 export declare function hasProcessContent(node: ChatConversationViewNode | undefined, boundary: TurnBoundary): boolean;
 export declare function hasVisibleBody(blocks: readonly AssistantBlock[]): boolean;
 /** Keep native block order. In particular, never lift a later Think above text. */
-export declare function assistantSegments(blocks: readonly AssistantBlock[]): {
-    kind: 'reasoning' | 'body';
+export interface AssistantSegment {
+    kind: 'reasoning' | 'body' | 'progress';
     start: number;
+    offset: number;
     blocks: AssistantBlock[];
-}[];
+    progressText?: string;
+}
+export declare function assistantSegments(blocks: readonly AssistantBlock[]): AssistantSegment[];
+/** Exclude only known empty records; unknown blocks and real status stay. */
+export declare function hasRenderableRecord(node: ChatConversationViewNode): boolean;
+/** Real terminal notices and unknown records are never process-only payloads. */
+export declare function isProcessRecord(node: ChatConversationViewNode): boolean;
 export declare function toolFailed(block: ToolCallBlock): boolean;
 export declare function toolName(block: ToolCallBlock): string;
 export declare function terminalLabel(reason: string | null): string | null;

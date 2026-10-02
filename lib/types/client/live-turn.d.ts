@@ -14,6 +14,15 @@ export type LiveStep = {
     key: string;
     nodeKey: string;
     start: number;
+    offset?: number;
+    blocks: AssistantBlock[];
+    step: number;
+} | {
+    kind: 'progress';
+    key: string;
+    nodeKey: string;
+    start: number;
+    offset?: number;
     blocks: AssistantBlock[];
     step: number;
 } | {
@@ -28,6 +37,7 @@ export type LiveStep = {
     kind: 'other';
     key: string;
     nodeKey: string;
+    process?: boolean;
 };
 export type LiveTurnItem = {
     kind: 'user';

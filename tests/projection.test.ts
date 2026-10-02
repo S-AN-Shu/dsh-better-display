@@ -77,7 +77,7 @@ test('body-only steps do not advertise empty thinking, while real reasoning and 
   assert.equal(hasProcessContent(closing, completed), false);
   assert.equal(hasProcessContent(node(assistant({ step: 2, blocks: [{ kind: 'reasoning', text: '' }, text] })), completed), false);
   assert.equal(hasProcessContent(node(assistant({ step: 2, blocks: [{ kind: 'reasoning', text: '真实思考' }, text] })), active), true);
-  assert.equal(hasProcessContent(node(assistant({ step: 1 })), completed), true);
+  assert.equal(hasProcessContent(node(assistant({ step: 1 })), completed), false);
   assert.equal(hasProcessContent({ ...closing, visibility: 'hidden' }, completed), false);
 });
 

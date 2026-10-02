@@ -75,22 +75,21 @@ test('fold presentation keeps prior step keys so the reader can collapse the sam
   assert.equal(second[0]?.kind, 'fold');
   if (second[0]?.kind !== 'fold') throw new Error('missing fold');
   assert.equal(second[0].key, 'live-fold:1');
-  assert.deepEqual(second[0].steps.map(step => step.key), before.map(item => item.key));
-  assert.deepEqual(second.filter(item => item.kind === 'open').map(item => item.key), ['4']);
+  assert.deepEqual(second.filter(item => item.kind === 'fold').flatMap(item => item.steps.map(step => step.key)), ['1','3']);
+  assert.deepEqual(second.filter(item => item.kind === 'open').map(item => item.key), ['2','4']);
 
   const third = presentLiveTurn([...chain, reasoning('4'), tool('5'), reasoning('6')], open);
   if (third[0]?.kind !== 'fold') throw new Error('missing grown fold');
   assert.equal(third[0].key, 'live-fold:1');
-  assert.deepEqual(third[0].steps.map(step => step.key), ['1', '2', '3', '4', '5']);
+  assert.deepEqual(third.filter(item => item.kind === 'fold').flatMap(item => item.steps.map(step => step.key)), ['1', '3', '4', '5']);
 });
 
-test('presentLiveTurn keeps a single prior box rather than one fold per step', () => {
+test('public prose divides process folds without losing or reordering prior steps', () => {
   const items = presentLiveTurn([reasoning('1'), body('2'), tool('3'), reasoning('4'), tool('5'), reasoning('6'), body('7')], open);
   const folds = items.filter(item => item.kind === 'fold');
-  assert.equal(folds.length, 1);
-  if (folds[0]?.kind !== 'fold') throw new Error('missing fold');
-  assert.equal(folds[0].steps.length, 5);
-  assert.deepEqual(items.filter(item => item.kind === 'open').map(item => item.key), ['6', '7']);
+  assert.equal(folds.length, 2);
+  assert.deepEqual(folds.flatMap(item => item.steps.map(step => step.key)), ['1','3','4','5']);
+  assert.deepEqual(items.filter(item => item.kind === 'open').map(item => item.key), ['2','6','7']);
 });
 
 test('mid-turn user insert resets the chain; only the next reasoning folds post-insert priors', () => {
@@ -105,7 +104,7 @@ test('mid-turn user insert resets the chain; only the next reasoning folds post-
   assert.deepEqual(kinds(after), [
     ['open', '1'], ['open', '2'], ['open', '3'],
     ['user', 'insert'],
-    ['fold', '输出×1 · 工具×1', ['4', '5']],
+    ['open','4'], ['fold', '工具×1', ['5']],
     ['open', '6'],
   ]);
   const folds = after.filter(item => item.kind === 'fold');
@@ -114,19 +113,16 @@ test('mid-turn user insert resets the chain; only the next reasoning folds post-
   assert.ok(!folds[0].steps.some(step => ['1', '2', '3', 'insert'].includes(step.key)));
 });
 
-test('each chain has at most one fold box; a later chain does not split priors into per-step folds', () => {
+test('each source span folds process only, and user input resets the chain', () => {
   const items = presentLiveTurn([
     reasoning('1'), body('2'), tool('3'), reasoning('4'),
     user('insert'),
     body('5'), tool('6'), reasoning('7'),
   ], open);
   const folds = items.filter(item => item.kind === 'fold');
-  assert.equal(folds.length, 2);
-  if (folds[0]?.kind !== 'fold' || folds[1]?.kind !== 'fold') throw new Error('expected one box per chain');
-  assert.deepEqual(folds[0].steps.map(step => step.key), ['1', '2', '3']);
-  assert.deepEqual(folds[1].steps.map(step => step.key), ['5', '6']);
-  assert.equal(folds[0].summary, '思考×1 · 输出×1 · 工具×1');
-  assert.equal(folds[1].summary, '输出×1 · 工具×1');
+  assert.equal(folds.length, 3);
+  assert.deepEqual(folds.map(item=>item.steps.map(step=>step.key)), [['1'],['3'],['6']]);
+  assert.deepEqual(folds.map(item=>item.summary), ['思考×1','工具×1','工具×1']);
 });
 
 test('successful turn close disables live fold so the existing final-answer rules still apply', () => {
@@ -157,7 +153,7 @@ test('segmentation uses existing assistantSegments and tool boundaries and does 
   const call: AssistantBlock = { kind: 'tool-call', callId: 'c1', name: 'bash', argsRaw: '{"command":"ls"}' };
   const empty: AssistantBlock = { kind: 'reasoning', text: '   ' };
   assert.deepEqual(assistantSegments([think, moreThink, text, call, empty]).map(part => [part.kind, part.start]), [
-    ['reasoning', 0], ['body', 2], ['reasoning', 4],
+    ['reasoning', 0], ['body', 2],
   ]);
 
   const data: AssistantChatData = { status: 'running', turn: 1, step: 0, blocks: [think, moreThink, text, call], time: 1 };
@@ -203,9 +199,9 @@ test('steering in the flow is a chain reset, same as a mid-turn user message', (
   const flow = readerFlow({ key: 'turn:1', turn: 1, keys: ['a', 'steer', 'b'] }, undefined, key => nodes.get(key));
   const items = presentLiveTurn(segmentLiveTurn(flow, key => nodes.get(key)), open);
   assert.deepEqual(kinds(items), [
-    ['open', 'a:reasoning:0'], ['open', 'a:body:1'],
+    ['open', 'a:0:0'], ['open', 'a:1:0'],
     ['user', 'steer'],
-    ['open', 'b:reasoning:0'],
+    ['open', 'b:0:0'],
   ]);
 });
 

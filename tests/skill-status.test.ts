@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import {
   CONVENTIONAL_SKILL_ROOTS,
   GENERATIVE_MCPAPPS_SKILL,
@@ -37,10 +37,10 @@ test('plugin-tree skills/ is not a harness skill root', () => {
     ...userSkillRoots({ DSH_HOME: '/home/me/.dsh', DSH_AGENTS_HOME: '/home/me/.agents' }, '/home/me'),
   ];
   assert.deepEqual(roots.map(root => root.path), [
-    '/plugin/dsh-better-display/.dsh/skills',
-    '/plugin/dsh-better-display/.agents/skills',
-    '/home/me/.dsh/skills',
-    '/home/me/.agents/skills',
+    join('/plugin/dsh-better-display','.dsh','skills'),
+    join('/plugin/dsh-better-display','.agents','skills'),
+    join(resolve('/home/me/.dsh'),'skills'),
+    join(resolve('/home/me/.agents'),'skills'),
   ]);
   assert.equal(roots.some(root => root.path.endsWith('/dsh-better-display/skills')), false);
 });

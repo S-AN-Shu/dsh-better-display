@@ -37,4 +37,6 @@ export declare function retiringKeys(before: readonly LiveTurnItem[], after: rea
 /** Insert only new summary slots. Never admit incoming content during shrink. */
 export declare function collapseRows(before: readonly LiveTurnItem[], target: readonly LiveTurnItem[]): FlowRow[];
 export declare function containsNewUser(before: readonly LiveTurnItem[], after: readonly LiveTurnItem[]): boolean;
+/** Newly arriving or growing public text must never wait for process choreography. */
+export declare function containsPublicUpdate(before: readonly LiveTurnItem[], after: readonly LiveTurnItem[]): boolean;
 //# sourceMappingURL=fold-choreography.d.ts.map

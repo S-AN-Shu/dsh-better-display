@@ -1,16 +1,17 @@
 import type { AssistantChatData, ChatConversationViewNode } from '@deepseek-ai/dsh-client-ui-chat/client';
 import type { AssistantBlock } from '@deepseek-ai/dsh-client-ui-conversation/client';
-import { assistantSegments, hasVisibleBody } from './projection.js';
+import { assistantSegments, hasRenderableRecord, isProcessRecord, hasVisibleBody } from './projection.js';
 import type { TurnBoundary } from './projection.js';
 import { activitySummary, stringValue } from './tool-activity.js';
 import type { ReaderFlowEntry, ToolActivityEntry } from './tool-activity.js';
 
 export type LiveStep =
   | { kind: 'reasoning'; key: string; nodeKey: string; start: number; blocks: AssistantBlock[]; step: number }
-  | { kind: 'body'; key: string; nodeKey: string; start: number; blocks: AssistantBlock[]; step: number }
+  | { kind: 'body'; key: string; nodeKey: string; start: number; offset?: number; blocks: AssistantBlock[]; step: number }
+  | { kind: 'progress'; key: string; nodeKey: string; start: number; offset?: number; blocks: AssistantBlock[]; step: number }
   | { kind: 'tool'; key: string; entry: ToolActivityEntry }
   | { kind: 'user'; key: string; nodeKey: string }
-  | { kind: 'other'; key: string; nodeKey: string };
+  | { kind: 'other'; key: string; nodeKey: string; process?: boolean };
 
 export type LiveTurnItem =
   | { kind: 'user'; key: string; step: Extract<LiveStep, { kind: 'user' }> }
@@ -30,7 +31,7 @@ export function foldSummary(steps: readonly LiveStep[]): string {
     if (step.kind === 'reasoning') reasoning += 1;
     else if (step.kind === 'body') body += 1;
     else if (step.kind === 'tool') tool += 1;
-    else if (step.kind !== 'user') extra += 1;
+    else if (step.kind !== 'user' && step.kind !== 'progress') extra += 1;
   }
   const parts: string[] = [];
   if (reasoning) parts.push(`思考×${reasoning}`);
@@ -65,16 +66,16 @@ function stepsFromAssistant(
   toolsByCallId: Map<string, ToolActivityEntry>,
   consumed: Set<string>,
 ): LiveStep[] {
-  const marks: { at: number; step: LiveStep }[] = [];
+  const marks: { at: number; offset?: number; step: LiveStep }[] = [];
   for (const part of assistantSegments(data.blocks)) {
     if (skipReasoning(part) || skipBody(part)) continue;
     marks.push({
-      at: part.start,
+      at: part.start, offset: part.offset,
       step: {
         kind: part.kind,
-        key: `${nodeKey}:${part.kind}:${part.start}`,
+        key: `${nodeKey}:${part.start}:${part.offset}`,
         nodeKey,
-        start: part.start,
+        start: part.start, offset: part.offset,
         blocks: part.blocks,
         step: data.step,
       },
@@ -87,7 +88,7 @@ function stepsFromAssistant(
     consumed.add(tool.callId);
     marks.push({ at: index, step: { kind: 'tool', key: tool.key, entry: tool } });
   });
-  marks.sort((left, right) => left.at - right.at || left.step.key.localeCompare(right.step.key));
+  marks.sort((left, right) => left.at - right.at || (left.offset ?? 0) - (right.offset ?? 0));
   return marks.map(mark => mark.step);
 }
 
@@ -111,7 +112,7 @@ export function segmentLiveTurn(
       continue;
     }
     const node = get(entry.nodeKey);
-    if (!node || node.visibility === 'hidden' || node.kind === 'turn-tail') continue;
+    if (!node || node.visibility === 'hidden' || !hasRenderableRecord(node)) continue;
     if (node.kind === 'user' || node.kind === 'steering') {
       steps.push({ kind: 'user', key: entry.key, nodeKey: entry.nodeKey });
       continue;
@@ -120,7 +121,7 @@ export function segmentLiveTurn(
       steps.push(...stepsFromAssistant(entry.nodeKey, node.data as AssistantChatData, toolsByCallId, consumed));
       continue;
     }
-    steps.push({ kind: 'other', key: entry.key, nodeKey: entry.nodeKey });
+    steps.push({ kind: 'other', key: entry.key, nodeKey: entry.nodeKey, process:isProcessRecord(node) });
   }
   return steps;
 }
@@ -168,31 +169,26 @@ function toolSummary(entry: ToolActivityEntry): string {
 }
 
 export function presentLiveTurn(steps: readonly LiveStep[], boundary: TurnBoundary, autoFold = true): LiveTurnItem[] {
-  const live = autoFold && liveFoldEnabled(boundary);
   const items: LiveTurnItem[] = [];
+  const live = autoFold && liveFoldEnabled(boundary);
   let chain: LiveStep[] = [];
   const flush = () => {
-    if (!chain.length) return;
-    if (!live) {
-      for (const step of chain) items.push({ kind: 'open', key: step.key, step });
-      chain = [];
-      return;
-    }
-    const { fold, open } = splitChain(chain);
-    if (fold?.length) {
-      items.push({ kind: 'fold', key: `live-fold:${chain[0]!.key}`, steps: fold, summary: foldSummary(fold) });
-    }
-    for (const step of open) items.push({ kind: 'open', key: step.key, step });
-    chain = [];
+    const lastReasoning = chain.findLastIndex(step => step.kind === 'reasoning');
+    let folded: LiveStep[] = [];
+    const emitFold = () => {
+      if (folded.length) items.push({kind:'fold',key:`live-fold:${folded[0]!.key}`,steps:folded,summary:foldSummary(folded)});
+      folded = [];
+    };
+    chain.forEach((step,index) => {
+      const publicStep = step.kind === 'body' || step.kind === 'progress' || (step.kind === 'other' && step.process === false);
+      if (live && !publicStep && index < lastReasoning) folded.push(step);
+      else { emitFold(); items.push({kind:'open',key:step.key,step}); }
+    });
+    emitFold(); chain = [];
   };
   for (const step of steps) {
-    if (step.kind === 'user') {
-      flush();
-      items.push({ kind: 'user', key: step.key, step });
-    } else {
-      chain.push(step);
-    }
+    if (step.kind === 'user') { flush(); items.push({kind:'user',key:step.key,step}); }
+    else chain.push(step);
   }
-  flush();
-  return items;
+  flush(); return items;
 }

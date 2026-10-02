@@ -1,6 +1,6 @@
 {
   "name": "dsh-better-display",
-  "version": "0.3.4-yishu.reader.1",
+  "version": "0.3.4-yishu.reader.2",
   "description": "A calmer reading view for DeepSeek Harness: native process details, live reasoning, and clean final answers.",
   "type": "module",
   "license": "MIT",
@@ -33,7 +33,7 @@
     }
   },
   "scripts": {
-    "build": "node scripts/check-harness-compat.mjs && tsc -p tsconfig.json && tsdown",
+    "build": "node scripts/check-harness-compat.mjs && tsc -p tsconfig.json && tsdown && node scripts/verify-host-bundle.mjs",
     "check:harness": "node scripts/check-harness-compat.mjs",
     "test:official": "node scripts/verify-official-bridge.mjs",
     "test:auto-fold": "node scripts/verify-auto-fold.mjs",
@@ -62,14 +62,23 @@
     "@deepseek-ai/dsh-api-session-controller": "0.2.0-rc.2",
     "@deepseek-ai/dsh-client-connection": "0.2.0-rc.2",
     "@deepseek-ai/dsh-session-turn-outline": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-util-code-language": "^0.2.0-rc.2",
+    "@shikijs/langs": "^4.3.1",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.20.0",
     "@types/react": "~18.3.1",
+    "anser": "^2.3.5",
+    "diff": "^9.0.0",
+    "immer": "^11.1.18",
     "lightningcss": "^1.33.0",
+    "react-dom": "^18.3.1",
+    "semver": "^7.7.2",
+    "shiki": "^4.3.1",
+    "simple-icons": "^16.31.0",
     "tsdown": "^0.22.2",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "semver": "^7.7.2"
+    "zustand": "^5.0.15"
   },
   "dependencies": {
     "clsx": "^2.0.0",
@@ -93,6 +102,7 @@
     "src",
     "tests",
     "scripts",
+    "tools",
     "cordis.yml",
     "cordis.patch.yml",
     "dshx.yml",

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.4-yishu.reader.2
+
+- 普通公开正文与播报按源顺序原位显示，过程折叠后保留；普通段落600，播报400，最终答复和媒体原样。
+- 共用public-text v1分段；取消顶部汇总和下游过滤；空步骤提前排除，折叠回收外层高度。
+- 公开更新绕过流程动画；普通正文取消首次补报并提供最多30秒缓冲，阶段播报保持120秒／6步及退避。
+- 明确原生聊天、上游未适配Reader、自有适配分支以及Desktop/Web安装边界。保留Windows图片修复。
+- Windows构建正确打包本地模块；构建后直接导入Host入口，防止生成不存在的.ts依赖导致插件入口不加载。
+- 与narrator按消息行所属视图交接，覆盖阅读／原生对话来回切换。
+
+
 ## 0.3.4 — 2026-09-28
 
 - Accept Harness `0.2.0-rc.1` (`dsh-v0.2.0-rc.1`, `4878cdabd87d4041bdaff61d04c966883b9fd07a`). Peer range is `>=0.2.0-rc.1 <0.2.1`. That range accepts `0.2.0-rc.1` and stable `0.2.0`, rejects `0.2.0` alphas, and rejects `0.1.7-rc.2`.

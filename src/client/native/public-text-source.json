@@ -1,0 +1,9 @@
+{
+  "package": "dsh-progress-narrator",
+  "version": "0.4.0",
+  "source": "https://github.com/S-AN-Shu/dsh-progress-narrator/blob/main/lib/protocol.js",
+  "progressProtocolVersion": 1,
+  "publicTextVersion": 1,
+  "sha256": "cbb82e6eec804b6dda560ddc0b2a264c01d1509bfa783fe090f95b84749186cb",
+  "normalization": "UTF-8 with LF"
+}

@@ -11,19 +11,20 @@ const root = resolve(import.meta.dirname, '..');
 const harness = process.env.DSHX_HARNESS;
 if (!harness) throw new Error('Set DSHX_HARNESS to the target checkout.');
 const require = createRequire(join(root, 'package.json'));
-const webRequire = createRequire(join(harness, 'packages/client/web/package.json'));
 const { build } = await import(pathToFileURL(createRequire(require.resolve('tsx')).resolve('esbuild')).href);
-const { launchPinnedChromium } = await import(pathToFileURL(join(homedir(), '.codex/playwright-runtime/runtime.mjs')).href);
+const { chromium } = require(process.env.DSH_PLAYWRIGHT || join(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
+const launchPinnedChromium = () => chromium.launch({ headless: true });
 const out = join(root, '.evidence/auto-fold');
 await mkdir(out, { recursive: true });
 await build({
   entryPoints: [join(root, 'tests/browser-auto-fold.tsx')], outfile: join(out, 'fixture.js'),
   bundle: true, platform: 'browser', format: 'esm', jsx: 'automatic',
+  nodePaths: [join(root, 'node_modules')],
   alias: {
-    '@deepseek-ai/dsh-client-ui-primitives': join(harness, 'packages/client/ui-primitives/src/index.ts'),
-    react: dirname(require.resolve('react/package.json')), 'react-dom': dirname(webRequire.resolve('react-dom/package.json')),
+    '@deepseek-ai/dsh-client-ui-primitives': require.resolve('@deepseek-ai/dsh-client-ui-primitives'),
+    react: dirname(require.resolve('react/package.json')), 'react-dom': dirname(require.resolve('react-dom/package.json')),
   },
-  loader: { '.woff2': 'dataurl', '.woff': 'dataurl', '.ttf': 'dataurl', '.svg': 'dataurl' },
+  loader: { '.css': 'local-css', '.woff2': 'dataurl', '.woff': 'dataurl', '.ttf': 'dataurl', '.svg': 'dataurl' },
 });
 const server = createServer(async (req, res) => {
   const file = req.url === '/fixture.js' ? 'fixture.js' : req.url === '/fixture.css' ? 'fixture.css' : null;
